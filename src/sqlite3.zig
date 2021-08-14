@@ -40,3 +40,9 @@ pub fn exec(self: *Self, comptime query: []const u8, args: anytype) !void {
     defer stmt.deinit();
     try stmt.exec(args);
 }
+
+pub fn first(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: []const u8, args: anytype) !?T {
+    var stmt = try self.db.prepare(query);
+    defer stmt.deinit();
+    return try stmt.oneAlloc(T, alloc, .{}, args);
+}
