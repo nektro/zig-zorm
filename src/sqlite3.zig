@@ -29,7 +29,7 @@ pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptim
     defer stmt.deinit();
     var iter = try stmt.iterator(T, .{});
     var list = std.ArrayList(T).init(alloc);
-    while (try iter.next(.{ .allocator = alloc })) |row| {
+    while (try iter.nextAlloc(alloc, .{})) |row| {
         try list.append(row);
     }
     return list.toOwnedSlice();
