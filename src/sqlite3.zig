@@ -20,6 +20,10 @@ pub fn connect(path: [:0]const u8) !Self {
     };
 }
 
+pub fn close(self: *Self) void {
+    self.db.deinit();
+}
+
 pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: []const u8) ![]const T {
     var stmt = try self.db.prepare(query);
     defer stmt.deinit();
