@@ -24,10 +24,10 @@ pub fn close(self: *Self) void {
     self.db.deinit();
 }
 
-pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: []const u8) ![]const T {
+pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: []const u8, args: anytype) ![]const T {
     var stmt = try self.db.prepare(query);
     defer stmt.deinit();
-    var iter = try stmt.iterator(T, .{});
+    var iter = try stmt.iterator(T, args);
     var list = std.ArrayList(T).init(alloc);
     while (try iter.nextAlloc(alloc, .{})) |row| {
         try list.append(row);
