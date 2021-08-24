@@ -9,3 +9,7 @@ pub fn engine(etype: EngineType) type {
         .sqlite3 => @import("./sqlite3.zig"),
     };
 }
+
+pub const backer = struct {
+    pub const sqlite = @import("sqlite");
+};
