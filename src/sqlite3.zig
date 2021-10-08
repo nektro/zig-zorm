@@ -27,7 +27,7 @@ pub fn close(self: *Self) void {
 pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: []const u8, args: anytype) ![]const T {
     var stmt = try self.db.prepare(query);
     defer stmt.deinit();
-    var iter = try stmt.iterator(T, args);
+    var iter = try stmt.iteratorAlloc(T, alloc, args);
     var list = std.ArrayList(T).init(alloc);
     while (try iter.nextAlloc(alloc, .{})) |row| {
         try list.append(row);
@@ -35,10 +35,10 @@ pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptim
     return list.toOwnedSlice();
 }
 
-pub fn exec(self: *Self, comptime query: []const u8, args: anytype) !void {
+pub fn exec(self: *Self, alloc: *std.mem.Allocator, comptime query: []const u8, args: anytype) !void {
     var stmt = try self.db.prepare(query);
     defer stmt.deinit();
-    try stmt.exec(args);
+    try stmt.execAlloc(.{ .allocator = alloc }, args);
 }
 
 pub fn first(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: []const u8, args: anytype) !?T {
