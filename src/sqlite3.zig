@@ -25,8 +25,15 @@ pub fn close(self: *Self) void {
     self.db.deinit();
 }
 
-    var stmt = try self.db.prepare(query);
+fn prepare(self: *Self, comptime query: string) !sqlite.StatementType(.{}, query) {
+    return self.db.prepare(query) catch |err| switch (err) {
+        error.SQLiteError => std.debug.panic("{s}", .{self.db.getDetailedError()}),
+        else => return err,
+    };
+}
+
 pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) ![]const T {
+    var stmt = try self.prepare(query);
     defer stmt.deinit();
     var iter = try stmt.iteratorAlloc(T, alloc, args);
     var list = std.ArrayList(T).init(alloc);
@@ -37,13 +44,13 @@ pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptim
 }
 
 pub fn exec(self: *Self, alloc: *std.mem.Allocator, comptime query: string, args: anytype) !void {
-    var stmt = try self.db.prepare(query);
+    var stmt = try self.prepare(query);
     defer stmt.deinit();
     try stmt.execAlloc(.{ .allocator = alloc }, args);
 }
 
 pub fn first(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) !?T {
-    var stmt = try self.db.prepare(query);
+    var stmt = try self.prepare(query);
     defer stmt.deinit();
     return try stmt.oneAlloc(T, alloc, .{}, args);
 }
