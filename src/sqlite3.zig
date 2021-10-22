@@ -1,4 +1,5 @@
 const std = @import("std");
+const string = []const u8;
 const sqlite = @import("sqlite");
 
 const Self = @This();
@@ -24,8 +25,8 @@ pub fn close(self: *Self) void {
     self.db.deinit();
 }
 
-pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: []const u8, args: anytype) ![]const T {
     var stmt = try self.db.prepare(query);
+pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) ![]const T {
     defer stmt.deinit();
     var iter = try stmt.iteratorAlloc(T, alloc, args);
     var list = std.ArrayList(T).init(alloc);
@@ -35,13 +36,13 @@ pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptim
     return list.toOwnedSlice();
 }
 
-pub fn exec(self: *Self, alloc: *std.mem.Allocator, comptime query: []const u8, args: anytype) !void {
+pub fn exec(self: *Self, alloc: *std.mem.Allocator, comptime query: string, args: anytype) !void {
     var stmt = try self.db.prepare(query);
     defer stmt.deinit();
     try stmt.execAlloc(.{ .allocator = alloc }, args);
 }
 
-pub fn first(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: []const u8, args: anytype) !?T {
+pub fn first(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) !?T {
     var stmt = try self.db.prepare(query);
     defer stmt.deinit();
     return try stmt.oneAlloc(T, alloc, .{}, args);
