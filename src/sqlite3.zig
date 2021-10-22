@@ -54,3 +54,12 @@ pub fn first(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime 
     defer stmt.deinit();
     return try stmt.oneAlloc(T, alloc, .{}, args);
 }
+
+pub fn doesTableExist(self: *Self, alloc: *std.mem.Allocator, name: string) !bool {
+    for (try self.collect(alloc, string, "select name from sqlite_master where type=? AND name=?", .{ .type = "table", .name = name })) |item| {
+        if (std.mem.eql(u8, item, name)) {
+            return true;
+        }
+    }
+    return false;
+}
