@@ -46,7 +46,7 @@ pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptim
 pub fn exec(self: *Self, alloc: *std.mem.Allocator, comptime query: string, args: anytype) !void {
     var stmt = try self.prepare(query);
     defer stmt.deinit();
-    try stmt.execAlloc(.{ .allocator = alloc }, args);
+    try stmt.execAlloc(alloc, .{}, args);
 }
 
 pub fn first(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) !?T {
