@@ -63,3 +63,29 @@ pub fn doesTableExist(self: *Self, alloc: *std.mem.Allocator, name: string) !boo
     }
     return false;
 }
+
+pub fn hasColumnWithName(self: *Self, alloc: *std.mem.Allocator, comptime table: string, comptime column: string) !bool {
+    for (try pragma.table_info(self, alloc, table)) |item| {
+        if (std.mem.eql(u8, item.name, column)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+pub const Pragma = struct {
+    pub const TableInfo = struct {
+        cid: u16,
+        name: string,
+        type: string,
+        notnull: bool,
+        dflt_value: string,
+        pk: bool,
+    };
+};
+
+pub const pragma = struct {
+    pub fn table_info(self: *Self, alloc: *std.mem.Allocator, comptime name: string) ![]const Pragma.TableInfo {
+        return try self.collect(alloc, Pragma.TableInfo, "pragma table_info(" ++ name ++ ")", .{});
+    }
+};
