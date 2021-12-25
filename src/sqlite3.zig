@@ -32,7 +32,7 @@ fn prepare(self: *Self, comptime query: string) !sqlite.StatementType(.{}, query
     };
 }
 
-pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) ![]const T {
+pub fn collect(self: *Self, alloc: std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) ![]const T {
     var stmt = try self.prepare(query);
     defer stmt.deinit();
     var iter = try stmt.iteratorAlloc(T, alloc, args);
@@ -43,19 +43,19 @@ pub fn collect(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptim
     return list.toOwnedSlice();
 }
 
-pub fn exec(self: *Self, alloc: *std.mem.Allocator, comptime query: string, args: anytype) !void {
+pub fn exec(self: *Self, alloc: std.mem.Allocator, comptime query: string, args: anytype) !void {
     var stmt = try self.prepare(query);
     defer stmt.deinit();
     try stmt.execAlloc(alloc, .{}, args);
 }
 
-pub fn first(self: *Self, alloc: *std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) !?T {
+pub fn first(self: *Self, alloc: std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) !?T {
     var stmt = try self.prepare(query);
     defer stmt.deinit();
     return try stmt.oneAlloc(T, alloc, .{}, args);
 }
 
-pub fn doesTableExist(self: *Self, alloc: *std.mem.Allocator, name: string) !bool {
+pub fn doesTableExist(self: *Self, alloc: std.mem.Allocator, name: string) !bool {
     for (try self.collect(alloc, string, "select name from sqlite_master where type=? AND name=?", .{ .type = "table", .name = name })) |item| {
         if (std.mem.eql(u8, item, name)) {
             return true;
@@ -64,7 +64,7 @@ pub fn doesTableExist(self: *Self, alloc: *std.mem.Allocator, name: string) !boo
     return false;
 }
 
-pub fn hasColumnWithName(self: *Self, alloc: *std.mem.Allocator, comptime table: string, comptime column: string) !bool {
+pub fn hasColumnWithName(self: *Self, alloc: std.mem.Allocator, comptime table: string, comptime column: string) !bool {
     for (try pragma.table_info(self, alloc, table)) |item| {
         if (std.mem.eql(u8, item.name, column)) {
             return true;
@@ -85,7 +85,7 @@ pub const Pragma = struct {
 };
 
 pub const pragma = struct {
-    pub fn table_info(self: *Self, alloc: *std.mem.Allocator, comptime name: string) ![]const Pragma.TableInfo {
+    pub fn table_info(self: *Self, alloc: std.mem.Allocator, comptime name: string) ![]const Pragma.TableInfo {
         return try self.collect(alloc, Pragma.TableInfo, "pragma table_info(" ++ name ++ ")", .{});
     }
 };
