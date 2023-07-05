@@ -32,11 +32,12 @@ fn prepare(self: *Self, comptime query: string) !sqlite.StatementType(.{}, query
     };
 }
 
-pub fn collect(self: *Self, alloc: std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) ![]const T {
+pub fn collect(self: *Self, alloc: std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) ![]T {
     var stmt = try self.prepare(query);
     defer stmt.deinit();
     var iter = try stmt.iteratorAlloc(T, alloc, args);
     var list = std.ArrayList(T).init(alloc);
+    errdefer list.deinit();
     while (try iter.nextAlloc(alloc, .{})) |row| {
         try list.append(row);
     }
