@@ -1,0 +1,7 @@
+AGPL-3.0:
+= https://spdx.org/licenses/AGPL-3.0
+- This
+
+MIT:
+= https://spdx.org/licenses/MIT
+- git https://github.com/vrischmann/zig-sqlite
