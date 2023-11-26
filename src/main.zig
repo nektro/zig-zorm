@@ -23,10 +23,10 @@ const Package = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = &gpa.allocator;
+    const alloc = gpa.allocator();
 
     var db = try zorm.engine(.sqlite3).connect("/home/snuc/dev/zig-zorm/access.db");
-    var list = try db.collect(alloc, Package, "select * from packages order by star_count desc limit 25");
+    var list = try db.collect(alloc, Package, "select * from packages order by star_count desc limit 25", .{});
 
     for (list) |item| {
         std.log.info("{s}", .{item.remote_name});
