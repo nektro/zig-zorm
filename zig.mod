@@ -5,3 +5,4 @@ license: AGPL-3.0
 description: The ORM library for Zig.
 dependencies:
   - src: git https://github.com/vrischmann/zig-sqlite
+  - src: git https://github.com/nektro/zig-tracer
