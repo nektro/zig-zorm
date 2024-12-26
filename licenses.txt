@@ -4,4 +4,6 @@ AGPL-3.0:
 
 MIT:
 = https://spdx.org/licenses/MIT
+- git https://github.com/nektro/zig-extras
+- git https://github.com/nektro/zig-tracer
 - git https://github.com/vrischmann/zig-sqlite
