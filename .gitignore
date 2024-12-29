@@ -3,3 +3,4 @@ zig-*
 deps.zig
 *.db
 zigmod.lock
+.zig-cache
