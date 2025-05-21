@@ -7,3 +7,6 @@ MIT:
 - git https://github.com/nektro/zig-extras
 - git https://github.com/nektro/zig-tracer
 - git https://github.com/vrischmann/zig-sqlite
+
+Unspecified:
+- http https://sqlite.org/2025/sqlite-amalgamation-3480000.zip
