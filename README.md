@@ -1,21 +1,13 @@
 # Zorm
 
-The ORM library for Zig.
+![loc](https://sloc.xyz/github/nektro/zig-zorm)
+[![license](https://img.shields.io/github/license/nektro/zig-zorm.svg)](https://github.com/nektro/zig-zorm/blob/master/LICENSE)
+[![nektro @ github sponsors](https://img.shields.io/badge/sponsors-nektro-purple?logo=github)](https://github.com/sponsors/nektro)
+[![Zig](https://img.shields.io/badge/Zig-0.14-f7a41d)](https://ziglang.org/)
+[![Zigmod](https://img.shields.io/badge/Zigmod-latest-f7a41d)](https://github.com/nektro/zigmod)
 
-WIP
+The database library for Zig.
 
-## Example Usage
-[src/main.zig](src/main.zig)
+## Supports
 
-## Built With
-- [Zig](https://github.com/ziglang/zig) master
-- [Zigmod](https://github.com/nektro/zigmod) package manager
-- https://github.com/vrischmann/zig-sqlite
-
-## Add me
-```
-$ zigmod aq add 1/nektro/zorm
-```
-
-## License
-AGPL-3.0
+- Sqlite3
