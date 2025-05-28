@@ -1,5 +1,5 @@
-AGPL-3.0:
-= https://spdx.org/licenses/AGPL-3.0
+MPL-2.0:
+= https://spdx.org/licenses/MPL-2.0
 - This
 
 MIT:
@@ -8,5 +8,6 @@ MIT:
 - git https://github.com/nektro/zig-tracer
 - git https://github.com/vrischmann/zig-sqlite
 
-Unspecified:
+blessing:
+= https://spdx.org/licenses/blessing
 - http https://sqlite.org/2025/sqlite-amalgamation-3480000.zip
