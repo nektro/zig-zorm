@@ -5,9 +5,13 @@ MPL-2.0:
 MIT:
 = https://spdx.org/licenses/MIT
 - git https://github.com/nektro/zig-extras
+- git https://github.com/nektro/zig-sys-linux
 - git https://github.com/nektro/zig-tracer
 - git https://github.com/vrischmann/zig-sqlite
 
 blessing:
 = https://spdx.org/licenses/blessing
 - http https://sqlite.org/2025/sqlite-amalgamation-3480000.zip
+
+Unspecified:
+- system_lib c
