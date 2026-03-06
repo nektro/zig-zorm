@@ -8,7 +8,8 @@ const Self = @This();
 db: sqlite.Db = undefined,
 mutex: std.Thread.Mutex,
 
-pub fn connect(path: [:0]const u8) !Self {
+pub fn connect(allocator: std.mem.Allocator, path: [:0]const u8) !Self {
+    _ = allocator;
     return Self{
         .db = try sqlite.Db.init(.{
             .mode = sqlite.Db.Mode{ .File = path },
