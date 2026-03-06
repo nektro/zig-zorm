@@ -27,6 +27,14 @@ pub fn close(self: *Self) void {
     self.db.deinit();
 }
 
+pub fn lock(self: *Self) void {
+    self.mutex.lock();
+}
+
+pub fn unlock(self: *Self) void {
+    self.mutex.unlock();
+}
+
 fn prepare(self: *Self, comptime query: string) !sqlite.StatementType(.{}, query) {
     return self.db.prepare(query) catch |err| switch (err) {
         error.SQLiteError => std.debug.panic("{s}", .{self.db.getDetailedError()}),
