@@ -6,7 +6,7 @@ pub const DriverType = enum {
 
 pub fn Driver(comptime etype: DriverType) type {
     return switch (etype) {
-        .sqlite3 => @import("./sqlite3.zig"),
+        .sqlite3 => backend.sqlite,
     };
 }
 
@@ -86,6 +86,6 @@ pub const Engine = union(DriverType) {
     }
 };
 
-pub const backer = struct {
+pub const backend = struct {
     pub const sqlite = @import("sqlite");
 };
