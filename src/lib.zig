@@ -2,22 +2,25 @@ const std = @import("std");
 
 pub const DriverType = enum {
     sqlite3,
+    postgresql,
 };
 
 pub fn Driver(comptime etype: DriverType) type {
     return switch (etype) {
         .sqlite3 => @import("./sqlite3.zig"),
+        .postgresql => @import("./postgresql.zig"),
     };
 }
 
 pub fn connect(_type: DriverType, allocator: std.mem.Allocator, connection: [:0]const u8) !Engine {
     return switch (_type) {
-        .sqlite3 => .{ .sqlite3 = try .connect(allocator, connection) },
+        inline else => |t| @unionInit(Engine, @tagName(t), try .connect(allocator, connection)),
     };
 }
 
 pub const Engine = union(DriverType) {
     sqlite3: Driver(.sqlite3),
+    postgresql: Driver(.postgresql),
 
     pub fn close(engine: *Engine) void {
         return switch (engine.*) {
@@ -57,7 +60,7 @@ pub const Engine = union(DriverType) {
 
     pub fn collectDyn(engine: *Engine, alloc: std.mem.Allocator, comptime T: type, query: []const u8, args: anytype) ![]T {
         return switch (engine.*) {
-            inline else => |*e| {
+            .sqlite3 => |*e| {
                 var stmt = try e.prepareDynamic(query);
                 defer stmt.deinit();
                 var iter = try stmt.iteratorAlloc(T, alloc, args);
@@ -67,6 +70,9 @@ pub const Engine = union(DriverType) {
                     try list.append(row);
                 }
                 return list.toOwnedSlice();
+            },
+            .postgresql => {
+                @panic("TODO");
             },
         };
     }

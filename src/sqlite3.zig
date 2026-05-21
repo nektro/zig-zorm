@@ -9,10 +9,11 @@ db: sqlite.Db = undefined,
 mutex: std.Thread.Mutex,
 
 pub fn connect(allocator: std.mem.Allocator, path: [:0]const u8) !Self {
+    std.log.scoped(.zorm).info("connecting to {s} @ {s}", .{ "sqlite3", path });
     _ = allocator;
     return Self{
         .db = try sqlite.Db.init(.{
-            .mode = sqlite.Db.Mode{ .File = path },
+            .mode = .{ .File = path },
             .open_flags = .{
                 .write = true,
                 .create = true,

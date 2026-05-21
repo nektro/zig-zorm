@@ -6,3 +6,8 @@ description: The ORM library for Zig.
 dependencies:
   - src: git https://github.com/vrischmann/zig-sqlite
   - src: git https://github.com/nektro/zig-tracer
+  - src: git https://github.com/nektro/zig-whatwg-url
+  - src: git https://github.com/nektro/zig-extras
+  - src: git https://github.com/nektro/zig-net
+  - src: git https://github.com/nektro/zig-nio
+  - src: git https://github.com/nektro/zig-sys-linux

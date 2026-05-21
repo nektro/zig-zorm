@@ -1,8 +1,11 @@
 MPL-2.0:
 = https://spdx.org/licenses/MPL-2.0
 - This
+- git https://github.com/nektro/zig-net
 - git https://github.com/nektro/zig-nfs
 - git https://github.com/nektro/zig-nio
+- git https://github.com/nektro/zig-unicode-idna
+- git https://github.com/nektro/zig-whatwg-url
 
 MIT:
 = https://spdx.org/licenses/MIT
@@ -10,6 +13,7 @@ MIT:
 - git https://github.com/nektro/zig-sys-linux
 - git https://github.com/nektro/zig-time
 - git https://github.com/nektro/zig-tracer
+- git https://github.com/nektro/zig-unicode-ucd
 - git https://github.com/vrischmann/zig-sqlite
 
 blessing:
