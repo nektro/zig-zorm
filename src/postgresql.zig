@@ -22,9 +22,9 @@ bufw: nio.BufferedWriter(4096, net.Stream),
 bufr: nio.BufferedReader(4096, net.Stream),
 
 pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
-    std.log.scoped(.zorm).info("connecting to {s} @ {s}", .{ "postgresql", connect_s });
     const connect_url = try url.URL.parse(allocator, connect_s, null);
     defer allocator.free(connect_url.href);
+    std.log.scoped(.zorm).info("connecting to {s} @ postgresql://{s}{s}", .{ "postgresql", connect_url.hostname, connect_url.pathname });
 
     const addr: net.Address = try .fromUrl(&connect_url, allocator);
     const conn = try addr.tcpConnect();
@@ -64,9 +64,7 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
         const t: BackendMessageType = @enumFromInt(try bufr.readByte());
         std.debug.assert(t == .Authentication);
         const auth_len = try bufr.readInt(u32, .big);
-        std.log.warn("auth_len={d}", .{auth_len});
         const auth = try bufr.readInt(u32, .big);
-        std.log.warn("auth={d}", .{auth});
         switch (auth) {
             10 => { // AuthenticationSASL
                 const methods = try bufr.readAlloc(allocator, auth_len - 4 - 4);
@@ -76,7 +74,6 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
                 while (methods_iter.next()) |method| {
                     const method_z = method.ptr[0..method.len :0];
                     if (method_z.len == 0) break;
-                    std.log.warn("method={s}", .{method_z});
 
                     // https://datatracker.ietf.org/doc/html/rfc7677
                     // https://datatracker.ietf.org/doc/html/rfc5802
@@ -198,7 +195,6 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
                                 std.debug.assert(ok == 12);
                                 const data = try bufr.readAlloc(allocator, len - 8);
                                 defer allocator.free(data);
-                                std.log.warn("AuthenticationSASLFinal = {s}", .{data});
                             }
                             { //<-AuthenticationOk
                                 const t2: BackendMessageType = @enumFromInt(try bufr.readByte());
@@ -208,7 +204,6 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
                                 std.debug.assert(len == 8);
                                 const ok = try bufr.readInt(u32, .big);
                                 std.debug.assert(ok == 0);
-                                std.log.warn("AuthenticationOk", .{});
                             }
                         }
                     }
@@ -267,10 +262,9 @@ pub fn collect(driver: *Driver, alloc: std.mem.Allocator, comptime T: type, comp
 //
 
 pub fn doesTableExist(driver: *Driver, alloc: std.mem.Allocator, name: []const u8) !bool {
-    _ = driver;
-    _ = alloc;
-    _ = name;
-    @panic("TODO");
+    const t = tracer.trace(@src(), " {s}", .{name});
+    defer t.end();
+    return try driver.first(alloc, bool, "SELECT EXISTS ( SELECT FROM pg_tables WHERE schemaname = ? AND tablename = ? )", .{ "public", name }) orelse unreachable;
 }
 
 pub fn hasColumnWithName(driver: *Driver, alloc: std.mem.Allocator, comptime table: []const u8, comptime column: []const u8) !bool {
