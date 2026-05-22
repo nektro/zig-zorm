@@ -90,4 +90,16 @@ pub const Engine = union(DriverType) {
             inline else => |*e| e.hasColumnWithName(alloc, table, column),
         };
     }
+
+    pub fn createTable(engine: *Engine, alloc: std.mem.Allocator, comptime name: []const u8, comptime pk_name: []const u8, pk_type: type) !void {
+        return switch (engine.*) {
+            inline else => |*e| e.createTable(alloc, name, pk_name, pk_type),
+        };
+    }
+
+    pub fn addColumn(engine: *Engine, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type) !void {
+        return switch (engine.*) {
+            inline else => |*e| e.addColumn(alloc, table_name, col_name, T),
+        };
+    }
 };

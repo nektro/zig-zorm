@@ -281,6 +281,36 @@ pub fn hasColumnWithName(driver: *Driver, alloc: std.mem.Allocator, comptime tab
     @panic("TODO");
 }
 
+pub fn createTable(driver: *Driver, alloc: std.mem.Allocator, comptime name: []const u8, comptime pk_name: []const u8, pk_type: type) !void {
+    _ = driver;
+    _ = alloc;
+    _ = name;
+    _ = pk_name;
+    _ = pk_type;
+    @panic("TODO");
+}
+
+pub fn addColumn(driver: *Driver, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type) !void {
+    _ = driver;
+    _ = alloc;
+    _ = table_name;
+    _ = col_name;
+    _ = T;
+    @panic("TODO");
+}
+
+pub fn nameForType(T: type) []const u8 {
+    if (@typeInfo(T) == .optional) {
+        return nameForType2(T);
+    }
+    return nameForType2(T) ++ " not null";
+}
+
+pub fn nameForType2(T: type) []const u8 {
+    _ = T;
+    @panic("TODO");
+}
+
 //
 // CancelRequest
 // GSSENCRequest

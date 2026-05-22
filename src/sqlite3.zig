@@ -2,6 +2,7 @@ const std = @import("std");
 const string = []const u8;
 const sqlite = @import("sqlite");
 const tracer = @import("tracer");
+const extras = @import("extras");
 
 const Self = @This();
 
@@ -102,6 +103,48 @@ pub fn hasColumnWithName(self: *Self, alloc: std.mem.Allocator, comptime table: 
         }
     }
     return false;
+}
+
+pub fn createTable(self: *Self, alloc: std.mem.Allocator, comptime name: []const u8, comptime pk_name: []const u8, pk_type: type) !void {
+    const t = tracer.trace(@src(), " {s} ({s})", .{ name, pk_name });
+    defer t.end();
+    try self.exec(alloc, comptime std.fmt.comptimePrint("create table {s}({s} {s} primary key not null)", .{ name, pk_name, nameForType2(pk_type) }), .{});
+}
+
+pub fn addColumn(self: *Self, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type) !void {
+    const t = tracer.trace(@src(), " {s}.{s}", .{ table_name, col_name });
+    defer t.end();
+    try self.exec(alloc, comptime std.fmt.comptimePrint("alter table {s} add \"{s}\" {s}", .{ table_name, col_name, nameForType(T) }), .{});
+}
+
+pub fn nameForType(T: type) []const u8 {
+    if (@typeInfo(T) == .optional) {
+        return nameForType2(@typeInfo(T).optional.child);
+    }
+    return nameForType2(T) ++ " not null";
+}
+
+pub fn nameForType2(T: type) []const u8 {
+    const tinfo = @typeInfo(T);
+
+    if (comptime extras.isZigString(T)) {
+        return "text";
+    }
+    if (tinfo == .@"struct") {
+        const info = tinfo.@"struct";
+        if (@hasDecl(T, "BaseType")) return nameForType2(T.BaseType);
+        if (info.layout == .@"packed") return nameForType2(info.backing_integer.?);
+    }
+    if (tinfo == .@"enum") {
+        return nameForType2(T.BaseType);
+    }
+    if (tinfo == .int or tinfo == .bool) {
+        return "integer";
+    }
+    if (comptime extras.isArrayOf(u8)(T)) {
+        return "blob";
+    }
+    @compileError(@typeName(T)); // TODO
 }
 
 pub const Pragma = struct {
