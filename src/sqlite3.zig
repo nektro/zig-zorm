@@ -39,7 +39,7 @@ pub fn unlock(self: *Self) void {
 
 fn prepare(self: *Self, comptime query: string) !sqlite.StatementType(.{}, query) {
     return self.db.prepare(query) catch |err| switch (err) {
-        error.SQLiteError => std.debug.panic("{s}", .{self.db.getDetailedError()}),
+        error.SQLiteError => std.debug.panic("{f}", .{self.db.getDetailedError()}),
         else => return err,
     };
 }
@@ -51,7 +51,7 @@ pub fn collect(self: *Self, alloc: std.mem.Allocator, comptime T: type, comptime
     var stmt = try self.prepare(query);
     defer stmt.deinit();
     var iter = try stmt.iteratorAlloc(T, alloc, args);
-    var list = std.ArrayList(T).init(alloc);
+    var list = std.array_list.Managed(T).init(alloc);
     errdefer list.deinit();
     while (try iter.nextAlloc(alloc, .{})) |row| {
         try list.append(row);

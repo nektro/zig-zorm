@@ -64,7 +64,7 @@ pub const Engine = union(DriverType) {
                 var stmt = try e.prepareDynamic(query);
                 defer stmt.deinit();
                 var iter = try stmt.iteratorAlloc(T, alloc, args);
-                var list = std.ArrayList(T).init(alloc);
+                var list = std.array_list.Managed(T).init(alloc);
                 errdefer list.deinit();
                 while (try iter.nextAlloc(alloc, .{})) |row| {
                     try list.append(row);
