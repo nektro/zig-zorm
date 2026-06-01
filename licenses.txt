@@ -20,6 +20,3 @@ MIT:
 blessing:
 = https://spdx.org/licenses/blessing
 - http https://sqlite.org/2025/sqlite-amalgamation-3480000.zip
-
-Unspecified:
-- system_lib c
