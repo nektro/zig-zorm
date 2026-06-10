@@ -28,18 +28,6 @@ pub const Engine = union(DriverType) {
         };
     }
 
-    pub fn lock(engine: *Engine) void {
-        return switch (engine.*) {
-            inline else => |*e| e.lock(),
-        };
-    }
-
-    pub fn unlock(engine: *Engine) void {
-        return switch (engine.*) {
-            inline else => |*e| e.unlock(),
-        };
-    }
-
     pub fn exec(engine: *Engine, alloc: std.mem.Allocator, comptime query: []const u8, args: anytype) !void {
         return switch (engine.*) {
             inline else => |*e| e.exec(alloc, query, args),

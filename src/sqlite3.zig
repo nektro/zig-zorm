@@ -7,7 +7,6 @@ const extras = @import("extras");
 const Self = @This();
 
 db: sqlite.Db = undefined,
-mutex: std.Thread.Mutex,
 
 pub fn connect(allocator: std.mem.Allocator, path: [:0]const u8) !Self {
     std.log.scoped(.zorm).info("connecting to {s} @ {s}", .{ "sqlite3", path });
@@ -21,20 +20,11 @@ pub fn connect(allocator: std.mem.Allocator, path: [:0]const u8) !Self {
             },
             .threading_mode = .SingleThread,
         }),
-        .mutex = std.Thread.Mutex{},
     };
 }
 
 pub fn close(self: *Self) void {
     self.db.deinit();
-}
-
-pub fn lock(self: *Self) void {
-    self.mutex.lock();
-}
-
-pub fn unlock(self: *Self) void {
-    self.mutex.unlock();
 }
 
 fn prepare(self: *Self, comptime query: string) !sqlite.StatementType(.{}, query) {

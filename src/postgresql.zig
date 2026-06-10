@@ -16,7 +16,6 @@ const sys = switch (builtin.target.os.tag) {
 
 const Driver = @This();
 
-mutex: std.Thread.Mutex,
 conn: net.Stream,
 bufw: nio.BufferedWriter(4096, net.Stream),
 bufr: nio.BufferedReader(4096, net.Stream),
@@ -178,7 +177,8 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
                                 const client_signature = hmacv(Hmac, &stored_key, auth_messagev);
                                 const client_proof = xor(client_key, client_signature);
                                 try fbs.writeAll(",p=");
-                                try Base64Enc.encodeWriter(&fbs, &client_proof);
+                                var stdw: std.Io.Writer = .fixed(fbs.written());
+                                try Base64Enc.encodeWriter(&stdw, &client_proof);
 
                                 try proto.SASLResponse.write(
                                     &bufw,
@@ -214,7 +214,6 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
     }
 
     return .{
-        .mutex = .{},
         .conn = conn,
         .bufw = bufw,
         .bufr = bufr,
@@ -223,14 +222,6 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
 
 pub fn close(driver: *Driver) void {
     driver.conn.close();
-}
-
-pub fn lock(driver: *Driver) void {
-    driver.mutex.lock();
-}
-
-pub fn unlock(driver: *Driver) void {
-    driver.mutex.unlock();
 }
 
 //
@@ -442,5 +433,5 @@ fn printError(bufr: *nio.BufferedReader(4096, net.Stream), allocator: std.mem.Al
     defer allocator.free(data);
     var iter = std.mem.splitScalar(u8, data, 0);
     while (iter.next()) |f| if (f.len > 0) std.log.err("{c}: {s}", .{ f[0], f[1..] });
-    std.posix.exit(1);
+    std.process.exit(1);
 }
