@@ -29,7 +29,7 @@ pub fn close(self: *Self) void {
 
 fn prepare(self: *Self, comptime query: string) !sqlite.StatementType(.{}, query) {
     return self.db.prepare(query) catch |err| switch (err) {
-        error.SQLiteError => std.debug.panic("{f}", .{self.db.getDetailedError()}),
+        error.SQLiteError => std.debug.panic("`{s}`: {f}", .{ query, self.db.getDetailedError() }),
         else => return err,
     };
 }
