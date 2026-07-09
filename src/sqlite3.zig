@@ -111,7 +111,7 @@ pub fn nameForType(T: type) []const u8 {
     if (@typeInfo(T) == .optional) {
         return nameForType2(@typeInfo(T).optional.child);
     }
-    return nameForType2(T) ++ " not null";
+    return nameForType2(T) ++ " not null default (" ++ defaultForType(T) ++ ")";
 }
 
 pub fn nameForType2(T: type) []const u8 {
@@ -133,6 +133,28 @@ pub fn nameForType2(T: type) []const u8 {
     }
     if (comptime extras.isArrayOf(u8)(T)) {
         return "blob";
+    }
+    @compileError(@typeName(T)); // TODO
+}
+
+pub fn defaultForType(T: type) []const u8 {
+    const info = @typeInfo(T);
+    if (info == .bool) {
+        return "false";
+    }
+    if (info == .@"struct") {
+        const sinfo = info.@"struct";
+        if (@hasDecl(T, "BaseType")) return defaultForType(T.BaseType);
+        if (sinfo.layout == .@"packed") return defaultForType(sinfo.backing_integer.?);
+    }
+    if (comptime extras.isZigString(T)) {
+        return "''";
+    }
+    if (info == .int) {
+        return "0";
+    }
+    if (info == .@"enum") {
+        return defaultForType(T.BaseType);
     }
     @compileError(@typeName(T)); // TODO
 }
