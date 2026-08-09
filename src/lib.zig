@@ -86,8 +86,20 @@ pub const Engine = union(DriverType) {
     }
 
     pub fn addColumn(engine: *Engine, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type) !void {
+        if (switch (@typeInfo(T)) {
+            .@"struct", .@"enum", .@"union" => @hasDecl(T, "foreign_table"),
+            else => false,
+        }) {
+            return addColumnForeign(engine, alloc, table_name, col_name, T, T.foreign_table, T.foreign_column);
+        }
         return switch (engine.*) {
             inline else => |*e| e.addColumn(alloc, table_name, col_name, T),
+        };
+    }
+
+    pub fn addColumnForeign(engine: *Engine, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type, comptime table_name2: []const u8, comptime col_name2: []const u8) !void {
+        return switch (engine.*) {
+            inline else => |*e| e.addColumnForeign(alloc, table_name, col_name, T, table_name2, col_name2),
         };
     }
 };

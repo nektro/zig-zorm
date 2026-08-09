@@ -284,6 +284,17 @@ pub fn addColumn(driver: *Driver, alloc: std.mem.Allocator, comptime table_name:
     @panic("TODO");
 }
 
+pub fn addColumnForeign(driver: *Driver, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type, comptime table_name2: []const u8, comptime col_name2: []const u8) !void {
+    _ = driver;
+    _ = alloc;
+    _ = table_name;
+    _ = col_name;
+    _ = T;
+    _ = table_name2;
+    _ = col_name2;
+    @panic("TODO");
+}
+
 pub fn nameForType(T: type) []const u8 {
     if (@typeInfo(T) == .optional) {
         return nameForType2(T);

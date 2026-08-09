@@ -107,6 +107,12 @@ pub fn addColumn(self: *Self, alloc: std.mem.Allocator, comptime table_name: []c
     try self.exec(alloc, comptime std.fmt.comptimePrint("alter table {s} add \"{s}\" {s}", .{ table_name, col_name, nameForType(T) }), .{});
 }
 
+pub fn addColumnForeign(self: *Self, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type, comptime table_name2: []const u8, comptime col_name2: []const u8) !void {
+    const t = tracer.trace(@src(), " {s}.{s}", .{ table_name, col_name });
+    defer t.end();
+    try self.exec(alloc, comptime std.fmt.comptimePrint("alter table {s} add \"{s}\" {s} references \"{s}\" (\"{s}\")", .{ table_name, col_name, nameForType(T), table_name2, col_name2 }), .{});
+}
+
 pub fn nameForType(T: type) []const u8 {
     if (@typeInfo(T) == .optional) {
         return nameForType2(@typeInfo(T).optional.child);
