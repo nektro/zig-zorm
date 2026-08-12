@@ -128,12 +128,13 @@ pub fn nameForType2(T: type) []const u8 {
     }
     if (tinfo == .@"struct") {
         const info = tinfo.@"struct";
-        if (@hasDecl(T, "baseTypeName")) return T.baseTypeName;
+        if (@hasDecl(T, "BaseType") and T.BaseType != []const u8) return T.baseTypeName;
         if (@hasDecl(T, "BaseType")) return nameForType2(T.BaseType);
         if (info.layout == .@"packed") return nameForType2(info.backing_integer.?);
+        return nameForType2(T.BaseType);
     }
     if (tinfo == .@"enum") {
-        if (@hasDecl(T, "baseTypeName")) return T.baseTypeName;
+        if (@hasDecl(T, "BaseType") and T.BaseType != []const u8) return T.baseTypeName;
         return nameForType2(T.BaseType);
     }
     if (tinfo == .int or tinfo == .bool) {
