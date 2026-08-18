@@ -257,21 +257,34 @@ pub const s = struct {
         if (code == c.SQLITE_OK) return;
         return rc2p(code);
     }
+    pub fn rc2p_d(db: *c.sqlite3, code: c_int) Error {
+        if (builtin.mode == .Debug) @panic(std.mem.sliceTo(c.sqlite3_errmsg(db), 0));
+        return rc2e(code);
+    }
+    pub fn assert_d(db: *c.sqlite3, code: c_int) void {
+        if (code == c.SQLITE_OK) return;
+        @panic(std.mem.sliceTo(c.sqlite3_errmsg(db), 0));
+    }
+    pub fn please_d(db: *c.sqlite3, code: c_int) !void {
+        if (code == c.SQLITE_OK) return;
+        return rc2p_d(db, code);
+    }
 };
 
 pub const Statement = struct {
+    db: *c.sqlite3,
     stmt: *c.sqlite3_stmt,
 
     pub fn prepare(driver: *Self, query: []const u8) !Statement {
         var stmt: ?*c.sqlite3_stmt = null;
         var flags: c_uint = 0;
         _ = &flags;
-        try s.please(c.sqlite3_prepare_v3(driver.db, query.ptr, @intCast(query.len), flags, &stmt, null));
-        return .{ .stmt = stmt.? };
+        try s.please_d(driver.db, c.sqlite3_prepare_v3(driver.db, query.ptr, @intCast(query.len), flags, &stmt, null));
+        return .{ .db = driver.db, .stmt = stmt.? };
     }
 
     pub fn finalize(stmt: Statement) void {
-        s.assert(c.sqlite3_finalize(stmt.stmt));
+        s.assert_d(stmt.db, c.sqlite3_finalize(stmt.stmt));
     }
 
     pub fn bindArgs(stmt: Statement, allocator: std.mem.Allocator, args: anytype) !void {
@@ -289,10 +302,10 @@ pub const Statement = struct {
 
     fn bindType(stmt: Statement, allocator: std.mem.Allocator, idx: usize, T: type, value: T) !void {
         if (comptime extras.isZigString(T)) {
-            return s.please(c.sqlite3_bind_text64(stmt.stmt, @intCast(idx), value.ptr, value.len, c.SQLITE_STATIC, c.SQLITE_UTF8));
+            return s.please_d(stmt.db, c.sqlite3_bind_text64(stmt.stmt, @intCast(idx), value.ptr, value.len, c.SQLITE_STATIC, c.SQLITE_UTF8));
         }
         if (comptime extras.isArrayOf(u8)(T)) {
-            return s.please(c.sqlite3_bind_blob64(stmt.stmt, @intCast(idx), &value, value.len, c.SQLITE_TRANSIENT));
+            return s.please_d(stmt.db, c.sqlite3_bind_blob64(stmt.stmt, @intCast(idx), &value, value.len, c.SQLITE_TRANSIENT));
         }
         switch (@typeInfo(T)) {
             .@"struct" => |info| {
@@ -304,7 +317,7 @@ pub const Statement = struct {
                 comptime std.debug.assert(info.bits <= 64);
                 if (value > std.math.maxInt(c.sqlite_int64)) return error.Overflow;
                 if (value < std.math.minInt(c.sqlite_int64)) return error.Overflow;
-                return s.please(c.sqlite3_bind_int64(stmt.stmt, @intCast(idx), @intCast(value)));
+                return s.please_d(stmt.db, c.sqlite3_bind_int64(stmt.stmt, @intCast(idx), @intCast(value)));
             },
             .optional => |info| {
                 if (value == null) return s.please(c.sqlite3_bind_null(stmt.stmt, @intCast(idx)));
@@ -352,20 +365,21 @@ pub const Statement = struct {
     }
 
     pub fn iterate(stmt: Statement) Iterator {
-        return .{ .stmt = stmt.stmt };
+        return .{ .db = stmt.db, .stmt = stmt.stmt };
     }
 
     pub const Iterator = struct {
+        db: *c.sqlite3,
         stmt: *c.sqlite3_stmt,
 
         pub fn reset(iter: Iterator) void {
-            return s.please(c.sqlite3_reset(iter.stmt)) catch {};
+            return s.please_d(iter.db, c.sqlite3_reset(iter.stmt)) catch {};
         }
 
         pub fn step(iter: Iterator, allocator: std.mem.Allocator, T: type) !?T {
             const code = c.sqlite3_step(iter.stmt);
             if (code == c.SQLITE_DONE) return null;
-            if (code != c.SQLITE_ROW) return s.rc2p(code);
+            if (code != c.SQLITE_ROW) return s.rc2p_d(iter.db, code);
             if (T == void) return;
             if (T == string) return try readType(iter, allocator, 0, string);
             if (@typeInfo(T) == .int) return try readType(iter, allocator, 0, T);
