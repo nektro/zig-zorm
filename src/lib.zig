@@ -49,14 +49,14 @@ pub const Engine = union(DriverType) {
     pub fn collectDyn(engine: *Engine, alloc: std.mem.Allocator, comptime T: type, query: []const u8, args: anytype) ![]T {
         return switch (engine.*) {
             .sqlite3 => |*e| {
-                var stmt = try e.prepareDynamic(query);
-                defer stmt.deinit();
-                var iter = try stmt.iteratorAlloc(T, alloc, args);
                 var list = std.array_list.Managed(T).init(alloc);
                 errdefer list.deinit();
-                while (try iter.nextAlloc(alloc, .{})) |row| {
-                    try list.append(row);
-                }
+                var stmt: Driver(.sqlite3).Statement = try .prepare(e, query);
+                defer stmt.finalize();
+                try stmt.bindArgs(alloc, args);
+                const iter = stmt.iterate();
+                errdefer iter.reset();
+                while (try iter.step(alloc, T)) |row| try list.append(row);
                 return list.toOwnedSlice();
             },
             .postgresql => {
