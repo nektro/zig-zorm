@@ -48,7 +48,7 @@ pub const Engine = union(DriverType) {
 
     pub fn collectDyn(engine: *Engine, alloc: std.mem.Allocator, comptime T: type, query: []const u8, args: anytype) ![]T {
         return switch (engine.*) {
-            .sqlite3 => |*e| {
+            .sqlite3 => |e| {
                 var list = std.array_list.Managed(T).init(alloc);
                 errdefer list.deinit();
                 var stmt: Driver(.sqlite3).Statement = try .prepare(e, query);
