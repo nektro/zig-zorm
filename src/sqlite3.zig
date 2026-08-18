@@ -9,6 +9,19 @@ const Self = @This();
 db: *c.sqlite3,
 
 pub fn connect(allocator: std.mem.Allocator, path: [:0]const u8) !Self {
+    var driver: Self = try .connect_only(allocator, path);
+    errdefer driver.close();
+    _ = try driver.first(allocator, void, "PRAGMA journal_mode = WAL", .{});
+    _ = try driver.first(allocator, void, "PRAGMA busy_timeout = 5000", .{});
+    _ = try driver.first(allocator, void, "PRAGMA synchronous = NORMAL", .{});
+    _ = try driver.first(allocator, void, "PRAGMA cache_size = 1000000000", .{});
+    _ = try driver.first(allocator, void, "PRAGMA foreign_keys = true", .{});
+    _ = try driver.first(allocator, void, "PRAGMA temp_store = memory", .{});
+    _ = try driver.first(allocator, void, "PRAGMA mmap_size = 1073741824", .{});
+    _ = try driver.first(allocator, void, "PRAGMA auto_vacuum = INCREMENTAL", .{});
+    return driver;
+}
+pub fn connect_only(allocator: std.mem.Allocator, path: [:0]const u8) !Self {
     std.log.scoped(.zorm).info("connecting to {s} @ {s}", .{ "sqlite3", path });
     _ = allocator;
     var db: ?*c.sqlite3 = null;
