@@ -4,12 +4,12 @@ const tracer = @import("tracer");
 const extras = @import("extras");
 const builtin = @import("builtin");
 
-const Self = @This();
+const Driver = @This();
 
 db: *c.sqlite3,
 
-pub fn connect(allocator: std.mem.Allocator, path: [:0]const u8) !Self {
-    var driver: Self = try .connect_only(allocator, path);
+pub fn connect(allocator: std.mem.Allocator, path: [:0]const u8) !Driver {
+    var driver: Driver = try .connect_only(allocator, path);
     errdefer driver.close();
     _ = try driver.first(allocator, void, "PRAGMA journal_mode = WAL", .{});
     _ = try driver.first(allocator, void, "PRAGMA busy_timeout = 5000", .{});
@@ -21,7 +21,7 @@ pub fn connect(allocator: std.mem.Allocator, path: [:0]const u8) !Self {
     _ = try driver.first(allocator, void, "PRAGMA auto_vacuum = INCREMENTAL", .{});
     return driver;
 }
-pub fn connect_only(allocator: std.mem.Allocator, path: [:0]const u8) !Self {
+pub fn connect_only(allocator: std.mem.Allocator, path: [:0]const u8) !Driver {
     std.log.scoped(.zorm).info("connecting to {s} @ {s}", .{ "sqlite3", path });
     _ = allocator;
     var db: ?*c.sqlite3 = null;
@@ -34,11 +34,11 @@ pub fn connect_only(allocator: std.mem.Allocator, path: [:0]const u8) !Self {
     return .{ .db = db.? };
 }
 
-pub fn close(self: *Self) void {
+pub fn close(self: *Driver) void {
     s.assert(c.sqlite3_close_v2(self.db));
 }
 
-pub fn collect(self: *Self, alloc: std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) ![]T {
+pub fn collect(self: *Driver, alloc: std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) ![]T {
     const t = tracer.trace(@src(), " {s}", .{query});
     defer t.end();
 
@@ -53,7 +53,7 @@ pub fn collect(self: *Self, alloc: std.mem.Allocator, comptime T: type, comptime
     return list.toOwnedSlice();
 }
 
-pub fn exec(self: *Self, alloc: std.mem.Allocator, comptime query: string, args: anytype) !void {
+pub fn exec(self: *Driver, alloc: std.mem.Allocator, comptime query: string, args: anytype) !void {
     const t = tracer.trace(@src(), " {s}", .{query});
     defer t.end();
 
@@ -63,7 +63,7 @@ pub fn exec(self: *Self, alloc: std.mem.Allocator, comptime query: string, args:
     try stmt.exec(alloc);
 }
 
-pub fn first(self: *Self, alloc: std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) !?T {
+pub fn first(self: *Driver, alloc: std.mem.Allocator, comptime T: type, comptime query: string, args: anytype) !?T {
     const t = tracer.trace(@src(), " {s}", .{query});
     defer t.end();
 
@@ -75,7 +75,7 @@ pub fn first(self: *Self, alloc: std.mem.Allocator, comptime T: type, comptime q
     return iter.step(alloc, T);
 }
 
-pub fn doesTableExist(self: *Self, alloc: std.mem.Allocator, name: string) !bool {
+pub fn doesTableExist(self: *Driver, alloc: std.mem.Allocator, name: string) !bool {
     const t = tracer.trace(@src(), " {s}", .{name});
     defer t.end();
 
@@ -87,7 +87,7 @@ pub fn doesTableExist(self: *Self, alloc: std.mem.Allocator, name: string) !bool
     return false;
 }
 
-pub fn hasColumnWithName(self: *Self, alloc: std.mem.Allocator, comptime table: string, comptime column: string) !bool {
+pub fn hasColumnWithName(self: *Driver, alloc: std.mem.Allocator, comptime table: string, comptime column: string) !bool {
     const t = tracer.trace(@src(), " {s}.{s}", .{ table, column });
     defer t.end();
 
@@ -99,19 +99,19 @@ pub fn hasColumnWithName(self: *Self, alloc: std.mem.Allocator, comptime table: 
     return false;
 }
 
-pub fn createTable(self: *Self, alloc: std.mem.Allocator, comptime name: []const u8, comptime pk_name: []const u8, pk_type: type) !void {
+pub fn createTable(self: *Driver, alloc: std.mem.Allocator, comptime name: []const u8, comptime pk_name: []const u8, pk_type: type) !void {
     const t = tracer.trace(@src(), " {s} ({s})", .{ name, pk_name });
     defer t.end();
     try self.exec(alloc, comptime std.fmt.comptimePrint("create table {s}({s} {s} primary key not null)", .{ name, pk_name, nameForType2(pk_type) }), .{});
 }
 
-pub fn addColumn(self: *Self, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type) !void {
+pub fn addColumn(self: *Driver, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type) !void {
     const t = tracer.trace(@src(), " {s}.{s}", .{ table_name, col_name });
     defer t.end();
     try self.exec(alloc, comptime std.fmt.comptimePrint("alter table {s} add \"{s}\" {s}", .{ table_name, col_name, nameForType(T) }), .{});
 }
 
-pub fn addColumnForeign(self: *Self, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type, comptime table_name2: []const u8, comptime col_name2: []const u8) !void {
+pub fn addColumnForeign(self: *Driver, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type, comptime table_name2: []const u8, comptime col_name2: []const u8) !void {
     const t = tracer.trace(@src(), " {s}.{s}", .{ table_name, col_name });
     defer t.end();
     try self.exec(alloc, comptime std.fmt.comptimePrint("alter table {s} add \"{s}\" {s} references \"{s}\" (\"{s}\")", .{ table_name, col_name, nameForType(T), table_name2, col_name2 }), .{});
@@ -184,7 +184,7 @@ pub const Pragma = struct {
 };
 
 pub const pragma = struct {
-    pub fn table_info(self: *Self, alloc: std.mem.Allocator, comptime name: string) ![]const Pragma.TableInfo {
+    pub fn table_info(self: *Driver, alloc: std.mem.Allocator, comptime name: string) ![]const Pragma.TableInfo {
         const t = tracer.trace(@src(), " {s}", .{name});
         defer t.end();
 
@@ -288,7 +288,7 @@ pub const Statement = struct {
     db: *c.sqlite3,
     stmt: *c.sqlite3_stmt,
 
-    pub fn prepare(driver: *Self, query: []const u8) !Statement {
+    pub fn prepare(driver: *Driver, query: []const u8) !Statement {
         var stmt: ?*c.sqlite3_stmt = null;
         var flags: c_uint = 0;
         _ = &flags;
