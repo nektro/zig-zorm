@@ -15,7 +15,6 @@ MIT:
 - git https://github.com/nektro/zig-time
 - git https://github.com/nektro/zig-tracer
 - git https://github.com/nektro/zig-unicode-ucd
-- git https://github.com/vrischmann/zig-sqlite
 
 blessing:
 = https://spdx.org/licenses/blessing
