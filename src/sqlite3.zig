@@ -102,7 +102,7 @@ pub fn hasColumnWithName(self: Driver, alloc: std.mem.Allocator, comptime table:
 pub fn createTable(self: Driver, alloc: std.mem.Allocator, comptime name: []const u8, comptime pk_name: []const u8, pk_type: type) !void {
     const t = tracer.trace(@src(), " {s} ({s})", .{ name, pk_name });
     defer t.end();
-    try self.exec(alloc, comptime std.fmt.comptimePrint("create table {s}({s} {s} primary key not null)", .{ name, pk_name, nameForType2(pk_type) }), .{});
+    try self.exec(alloc, comptime std.fmt.comptimePrint("create table {s}({s} {s} primary key not null) strict", .{ name, pk_name, nameForType2(pk_type) }), .{});
 }
 
 pub fn addColumn(self: Driver, alloc: std.mem.Allocator, comptime table_name: []const u8, comptime col_name: []const u8, T: type) !void {
@@ -315,7 +315,7 @@ pub const Statement = struct {
 
     fn bindType(stmt: Statement, allocator: std.mem.Allocator, idx: usize, T: type, value: T) !void {
         if (comptime extras.isZigString(T)) {
-            return s.please_d(stmt.db, c.sqlite3_bind_text64(stmt.stmt, @intCast(idx), value.ptr, value.len, c.SQLITE_STATIC, c.SQLITE_UTF8));
+            return bindText(stmt, idx, value, c.SQLITE_STATIC);
         }
         if (comptime extras.isArrayOf(u8)(T)) {
             return s.please_d(stmt.db, c.sqlite3_bind_blob64(stmt.stmt, @intCast(idx), &value, value.len, c.SQLITE_TRANSIENT));
@@ -360,6 +360,7 @@ pub const Statement = struct {
         switch (info.params.len) {
             1 => {
                 const base = try value.bindField();
+                if (T.BaseType == string and comptime extras.isArrayOf(u8)(@TypeOf(base))) return bindText(stmt, idx, &base, c.SQLITE_TRANSIENT);
                 return bindType(stmt, allocator, idx, @TypeOf(base), base);
             },
             2 => {
@@ -368,6 +369,10 @@ pub const Statement = struct {
             },
             else => comptime unreachable,
         }
+    }
+
+    fn bindText(stmt: Statement, idx: usize, value: []const u8, destructor: c.sqlite3_destructor_type) !void {
+        return s.please_d(stmt.db, c.sqlite3_bind_text64(stmt.stmt, @intCast(idx), value.ptr, value.len, destructor, c.SQLITE_UTF8));
     }
 
     pub fn exec(stmt: Statement, allocator: std.mem.Allocator) !void {
