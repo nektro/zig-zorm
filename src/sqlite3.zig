@@ -198,6 +198,7 @@ pub const c = @cImport({
 
 pub const s = struct {
     const Error = error{
+        Unexpected,
         SQLITE_ERROR,
         SQLITE_INTERNAL,
         SQLITE_PERM,
@@ -256,7 +257,7 @@ pub const s = struct {
         if (code == c.SQLITE_NOTADB) return error.SQLITE_NOTADB;
         if (code == c.SQLITE_NOTICE) return error.SQLITE_NOTICE;
         if (code == c.SQLITE_WARNING) return error.SQLITE_WARNING;
-        unreachable;
+        return error.Unexpected;
     }
     pub fn rc2p(code: c_int) Error {
         if (builtin.mode == .Debug) @panic(std.mem.sliceTo(c.sqlite3_errstr(code), 0));
