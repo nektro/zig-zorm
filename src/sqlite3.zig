@@ -5,6 +5,8 @@ const extras = @import("extras");
 const builtin = @import("builtin");
 
 const Driver = @This();
+const SQLITE_STATIC: *allowzero anyopaque = @ptrFromInt(0);
+const SQLITE_TRANSIENT: *allowzero anyopaque = @ptrFromInt(std.math.maxInt(usize));
 
 db: *c.sqlite3,
 
@@ -316,10 +318,10 @@ pub const Statement = struct {
 
     fn bindType(stmt: Statement, allocator: std.mem.Allocator, idx: usize, T: type, value: T) !void {
         if (comptime extras.isZigString(T)) {
-            return bindText(stmt, idx, value, c.SQLITE_STATIC);
+            return bindText(stmt, idx, value, SQLITE_STATIC);
         }
         if (comptime extras.isArrayOf(u8)(T)) {
-            return s.please_d(stmt.db, c.sqlite3_bind_blob64(stmt.stmt, @intCast(idx), &value, value.len, c.SQLITE_TRANSIENT));
+            return s.please_d(stmt.db, c.sqlite3_bind_blob64(stmt.stmt, @intCast(idx), &value, value.len, SQLITE_TRANSIENT));
         }
         switch (@typeInfo(T)) {
             .@"struct" => |info| {
@@ -361,7 +363,7 @@ pub const Statement = struct {
         switch (info.params.len) {
             1 => {
                 const base = try value.bindField();
-                if (T.BaseType == string and comptime extras.isArrayOf(u8)(@TypeOf(base))) return bindText(stmt, idx, &base, c.SQLITE_TRANSIENT);
+                if (T.BaseType == string and comptime extras.isArrayOf(u8)(@TypeOf(base))) return bindText(stmt, idx, &base, SQLITE_TRANSIENT);
                 return bindType(stmt, allocator, idx, @TypeOf(base), base);
             },
             2 => {
@@ -372,8 +374,14 @@ pub const Statement = struct {
         }
     }
 
-    fn bindText(stmt: Statement, idx: usize, value: []const u8, destructor: c.sqlite3_destructor_type) !void {
-        return s.please_d(stmt.db, c.sqlite3_bind_text64(stmt.stmt, @intCast(idx), value.ptr, value.len, destructor, c.SQLITE_UTF8));
+    fn bindText(stmt: Statement, idx: usize, value: []const u8, destructor: *allowzero anyopaque) !void {
+        const destructor_real: c.sqlite3_destructor_type = blk: {
+            // https://github.com/ziglang/translate-c/issues/128
+            @setRuntimeSafety(false);
+            const ptr: c.sqlite3_destructor_type = @ptrCast(@alignCast(destructor));
+            break :blk ptr;
+        };
+        return s.please_d(stmt.db, c.sqlite3_bind_text64(stmt.stmt, @intCast(idx), value.ptr, value.len, destructor_real, c.SQLITE_UTF8));
     }
 
     pub fn exec(stmt: Statement, allocator: std.mem.Allocator) !void {
