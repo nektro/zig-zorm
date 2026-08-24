@@ -11,6 +11,9 @@ const tracer = @import("tracer");
 
 const sys = switch (builtin.target.os.tag) {
     .linux => @import("sys-linux"),
+    .freebsd => @import("sys-freebsd"),
+    .netbsd => @import("sys-netbsd"),
+    .openbsd => @import("sys-openbsd"),
     else => unreachable,
 };
 
@@ -37,8 +40,7 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
 
     // https://github.com/postgres/postgres/blob/REL_18_0/src/include/common/scram-common.h#L32-L37
     const nonce_len = 18;
-    var cnonce_buf: [nonce_len]u8 = @splat(0);
-    var cnonce = try sys.getrandom(&cnonce_buf, 0);
+    const cnonce = nio.randomBytes(nonce_len);
     _ = &cnonce;
 
     var snonce_b64_buf: [128]u8 = @splat(0);
@@ -111,7 +113,7 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
                             // server-error-value = "invalid-encoding" / "extensions-not-supported" / "invalid-proof" / "channel-bindings-dont-match" / "server-does-support-channel-binding" / "channel-binding-not-supported" / "unsupported-channel-binding-type" / "unknown-user" / "invalid-username-encoding" / "no-resources" / "other-error" / server-error-value-ext
 
                             var cnonce_b64_buf: [Base64Enc.calcSize(nonce_len)]u8 = @splat(0);
-                            const cnonce_b64 = Base64Enc.encode(&cnonce_b64_buf, cnonce);
+                            const cnonce_b64 = Base64Enc.encode(&cnonce_b64_buf, &cnonce);
 
                             var salt_b64_buf: [128]u8 = @splat(0);
                             var salt_b64: []u8 = salt_b64_buf[0..];
