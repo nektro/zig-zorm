@@ -19,6 +19,8 @@ const sys = switch (builtin.target.os.tag) {
 
 const Driver = @This();
 
+pub const Error = error{};
+
 conn: net.Stream,
 bufw: nio.BufferedWriter(4096, net.Stream),
 bufr: nio.BufferedReader(4096, net.Stream),

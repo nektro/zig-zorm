@@ -12,6 +12,14 @@ pub fn Driver(comptime etype: DriverType) type {
     };
 }
 
+pub const Error = blk: {
+    var Err: type = error{};
+    for (@typeInfo(DriverType).@"enum".fields) |f| {
+        Err = Err || Driver(@field(DriverType, f.name)).Error;
+    }
+    break :blk Err;
+};
+
 pub fn connect(_type: DriverType, allocator: std.mem.Allocator, connection: [:0]const u8) !Engine {
     return switch (_type) {
         inline else => |t| @unionInit(Engine, @tagName(t), try .connect(allocator, connection)),

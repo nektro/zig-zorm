@@ -8,6 +8,8 @@ const Driver = @This();
 const SQLITE_STATIC: *allowzero anyopaque = @ptrFromInt(0);
 const SQLITE_TRANSIENT: *allowzero anyopaque = @ptrFromInt(std.math.maxInt(usize));
 
+pub const Error = s.Error || error{Overflow};
+
 db: *c.sqlite3,
 
 pub fn connect(allocator: std.mem.Allocator, path: [:0]const u8) !Driver {
@@ -230,7 +232,7 @@ pub const s = struct {
         SQLITE_NOTICE,
         SQLITE_WARNING,
     };
-    pub fn rc2e(code: c_int) Error {
+    pub fn rc2e(code: c_int) s.Error {
         if (code == c.SQLITE_ERROR) return error.SQLITE_ERROR;
         if (code == c.SQLITE_INTERNAL) return error.SQLITE_INTERNAL;
         if (code == c.SQLITE_PERM) return error.SQLITE_PERM;
@@ -261,7 +263,7 @@ pub const s = struct {
         if (code == c.SQLITE_WARNING) return error.SQLITE_WARNING;
         return error.Unexpected;
     }
-    pub fn rc2p(code: c_int) Error {
+    pub fn rc2p(code: c_int) s.Error {
         if (builtin.mode == .Debug) @panic(std.mem.sliceTo(c.sqlite3_errstr(code), 0));
         return rc2e(code);
     }
@@ -273,7 +275,7 @@ pub const s = struct {
         if (code == c.SQLITE_OK) return;
         return rc2p(code);
     }
-    pub fn rc2p_d(db: *c.sqlite3, code: c_int) Error {
+    pub fn rc2p_d(db: *c.sqlite3, code: c_int) s.Error {
         if (builtin.mode == .Debug) @panic(std.mem.sliceTo(c.sqlite3_errmsg(db), 0));
         return rc2e(code);
     }
