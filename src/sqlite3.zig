@@ -196,9 +196,7 @@ pub const pragma = struct {
     }
 };
 
-pub const c = @cImport({
-    @cInclude("sqlite3.h");
-});
+pub const c = @import("c");
 
 pub const s = struct {
     const Error = error{
@@ -264,7 +262,7 @@ pub const s = struct {
         return error.Unexpected;
     }
     pub fn rc2p(code: c_int) s.Error {
-        if (builtin.mode == .Debug) @panic(std.mem.sliceTo(c.sqlite3_errstr(code), 0));
+        if (builtin.mode == .debug) @panic(std.mem.sliceTo(c.sqlite3_errstr(code), 0));
         return rc2e(code);
     }
     pub fn assert(code: c_int) void {
@@ -276,7 +274,7 @@ pub const s = struct {
         return rc2p(code);
     }
     pub fn rc2p_d(db: *c.sqlite3, code: c_int) s.Error {
-        if (builtin.mode == .Debug) @panic(std.mem.sliceTo(c.sqlite3_errmsg(db), 0));
+        if (builtin.mode == .debug) @panic(std.mem.sliceTo(c.sqlite3_errmsg(db), 0));
         return rc2e(code);
     }
     pub fn assert_d(db: *c.sqlite3, code: c_int) void {
@@ -313,8 +311,8 @@ pub const Statement = struct {
             }
             return;
         }
-        inline for (@typeInfo(@TypeOf(args)).@"struct".fields, 0..) |f, i| {
-            try bindType(stmt, allocator, i + 1, f.type, @field(args, f.name));
+        inline for (@typeInfo(@TypeOf(args)).@"struct".field_names, @typeInfo(@TypeOf(args)).@"struct".field_types, 0..) |f, t, i| {
+            try bindType(stmt, allocator, i + 1, t, @field(args, f));
         }
     }
 
@@ -362,7 +360,7 @@ pub const Statement = struct {
     fn bindBaseType(stmt: Statement, allocator: std.mem.Allocator, idx: usize, T: type, value: T) !void {
         const bind_fn = T.bindField;
         const info = @typeInfo(@TypeOf(bind_fn)).@"fn";
-        switch (info.params.len) {
+        switch (info.param_types.len) {
             1 => {
                 const base = try value.bindField();
                 if (T.BaseType == string and comptime extras.isArrayOf(u8)(@TypeOf(base))) return bindText(stmt, idx, &base, SQLITE_TRANSIENT);
@@ -400,7 +398,7 @@ pub const Statement = struct {
         const iter = stmt.iterate();
         errdefer iter.reset();
         const row = try iter.step(allocator, void);
-        if (builtin.mode == .Debug) std.debug.assert(row == null);
+        if (builtin.mode == .debug) std.debug.assert(row == null);
     }
 
     pub fn iterate(stmt: Statement) Iterator {
@@ -423,8 +421,8 @@ pub const Statement = struct {
             if (T == string) return try readType(iter, allocator, 0, string);
             if (@typeInfo(T) == .int) return try readType(iter, allocator, 0, T);
             var result: T = undefined;
-            inline for (@typeInfo(T).@"struct".fields, 0..) |f, i| {
-                @field(result, f.name) = try readType(iter, allocator, i, f.type);
+            inline for (@typeInfo(T).@"struct".field_names, @typeInfo(T).@"struct".field_types, 0..) |f, t, i| {
+                @field(result, f) = try readType(iter, allocator, i, t);
             }
             return result;
         }

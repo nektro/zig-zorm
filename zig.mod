@@ -3,6 +3,7 @@ name: zorm
 main: src/lib.zig
 license: MPL-2.0
 description: The ORM library for Zig.
+translate_c_h: sqlite3.h
 dependencies:
   - src: http https://sqlite.org/2025/sqlite-amalgamation-3480000.zip sha256-d9a15a42db7c78f88fe3d3c5945acce2f4bfe9e4da9f685cd19f6ea1d40aa884
     id: 5wea8xz8pv9w3gv4ve959e6wnxp372g6t4dpzf8j
