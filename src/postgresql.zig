@@ -64,7 +64,7 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
         try bufw.flush();
     }
     {
-        const t: BackendMessageType = @enumFromInt(try bufr.readByte());
+        const t: BackendMessageType = @fromBackingInt(@intCast(try bufr.readByte()));
         std.debug.assert(t == .Authentication);
         const auth_len = try bufr.readInt(u32, .big);
         const auth = try bufr.readInt(u32, .big);
@@ -138,7 +138,7 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
                                 try bufw.flush();
                             }
                             { //<-AuthenticationSASLContinue (scram server-first-message)
-                                const t2: BackendMessageType = @enumFromInt(try bufr.readByte());
+                                const t2: BackendMessageType = @fromBackingInt(@intCast(try bufr.readByte()));
                                 if (t2 == .ErrorResponse) try printError(&bufr, allocator);
                                 std.debug.assert(t2 == .Authentication);
                                 const len = try bufr.readInt(u32, .big);
@@ -191,7 +191,7 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
                                 try bufw.flush();
                             }
                             { //<-AuthenticationSASLFinal (scram server-final-message)
-                                const t2: BackendMessageType = @enumFromInt(try bufr.readByte());
+                                const t2: BackendMessageType = @fromBackingInt(@intCast(try bufr.readByte()));
                                 if (t2 == .ErrorResponse) try printError(&bufr, allocator);
                                 std.debug.assert(t2 == .Authentication);
                                 const len = try bufr.readInt(u32, .big);
@@ -201,7 +201,7 @@ pub fn connect(allocator: std.mem.Allocator, connect_s: [:0]const u8) !Driver {
                                 defer allocator.free(data);
                             }
                             { //<-AuthenticationOk
-                                const t2: BackendMessageType = @enumFromInt(try bufr.readByte());
+                                const t2: BackendMessageType = @fromBackingInt(@intCast(try bufr.readByte()));
                                 if (t2 == .ErrorResponse) try printError(&bufr, allocator);
                                 std.debug.assert(t2 == .Authentication);
                                 const len = try bufr.readInt(u32, .big);
